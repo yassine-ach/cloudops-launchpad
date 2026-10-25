@@ -45,3 +45,4 @@ terraform.rc
 # planout
 
 desktop.ini
+.venv/
