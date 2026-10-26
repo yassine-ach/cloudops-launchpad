@@ -119,6 +119,13 @@ resource "aws_ecr_repository" "ecr_rep" {
   tags = {
     Name = "${var.project_name}-ecr"
   }
+}
 
+resource "aws_cloudwatch_log_group" "c_watch" {
+  name              = "/ecs/${var.project_name}"
+  retention_in_days = 7
+  tags = {
+    Name = "${var.project_name}-cloud-watch"
+  }
 }
 
