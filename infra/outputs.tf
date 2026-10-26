@@ -10,3 +10,8 @@ output "private_subnet_ids" {
   description = "IDs of private subnets"
   value       = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 }
+
+output "ecr_repository_url" {
+  description = "URL of the ECR"
+  value       = aws_ecr_repository.ecr_rep.repository_url
+}

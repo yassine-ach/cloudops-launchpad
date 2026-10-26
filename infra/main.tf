@@ -113,4 +113,12 @@ resource "aws_route_table_association" "private_b" {
   route_table_id = aws_route_table.private_rt.id
 }
 
+resource "aws_ecr_repository" "ecr_rep" {
+  name         = "${var.project_name}-ecr"
+  force_delete = true
+  tags = {
+    Name = "${var.project_name}-ecr"
+  }
+
+}
 
