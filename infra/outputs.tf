@@ -15,3 +15,8 @@ output "ecr_repository_url" {
   description = "URL of the ECR"
   value       = aws_ecr_repository.ecr_rep.repository_url
 }
+
+output "alb_dns_name" {
+  description = "DNS of the Application Load balancer"
+  value       = aws_lb.app_lb.dns_name
+}

@@ -201,3 +201,111 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_tasks" {
   from_port                    = 5000
   to_port                      = 5000
 }
+
+resource "aws_lb" "app_lb" {
+  name               = "${var.project_name}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sec.id]
+  subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+
+  tags = {
+    Name = "${var.project_name}-app-lb"
+  }
+}
+resource "aws_lb_target_group" "alb_target" {
+  name        = "${var.project_name}-alb-tg"
+  port        = 5000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = aws_vpc.main.id
+  health_check {
+    path    = "/health"
+    matcher = "200"
+  }
+}
+resource "aws_lb_listener" "alb_listener" {
+  load_balancer_arn = aws_lb.app_lb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.alb_target.arn
+  }
+}
+
+resource "aws_ecs_cluster" "ecs_cluster" {
+  name = "${var.project_name}-ecs-cluster"
+
+  tags = {
+    Name = "${var.project_name}-ecs-cluster"
+  }
+}
+resource "aws_ecs_task_definition" "app_task" {
+
+  family                   = "${var.project_name}-task"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = aws_iam_role.ecs_role.arn
+  container_definitions = jsonencode([
+    {
+      name         = "app"
+      image        = "${aws_ecr_repository.ecr_rep.repository_url}:latest"
+      essential    = true
+      portMappings = [{ containerPort = 5000, protocol = "tcp" }]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.c_watch.name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_ecs_service" "ecs_service" {
+  name            = "${var.project_name}-service"
+  cluster         = aws_ecs_cluster.ecs_cluster.id
+  task_definition = aws_ecs_task_definition.app_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+  network_configuration {
+    subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+    security_groups  = [aws_security_group.tasks_sec.id]
+    assign_public_ip = false
+  }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.alb_target.arn
+    container_name   = "app"
+    container_port   = 5000
+  }
+
+  depends_on = [aws_lb_listener.alb_listener, aws_route.route]
+}
+
+resource "aws_eip" "eip" {
+  domain = "vpc"
+}
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.eip.id
+  subnet_id     = aws_subnet.public_a.id
+  depends_on    = [aws_internet_gateway.gw]
+}
+resource "aws_route" "route" {
+  route_table_id         = aws_route_table.private_rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat.id
+
+}
+
+resource "aws_vpc_endpoint" "vpc_endpoint" {
+  vpc_id          = aws_vpc.main.id
+  service_name    = "com.amazonaws.${var.region}.s3"
+  route_table_ids = [aws_route_table.private_rt.id]
+}
