@@ -150,3 +150,54 @@ resource "aws_iam_role_policy_attachment" "ecs_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_security_group" "alb_sec" {
+  name        = "${var.project_name}-alb"
+  description = "Security Group for the Load Balancer"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-alb-sec"
+  }
+}
+
+resource "aws_security_group" "tasks_sec" {
+  name        = "${var.project_name}-tasks-sec"
+  description = "Security group for the ECS tasks"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-tasks-sec"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_from_internet" {
+  security_group_id = aws_security_group.alb_sec.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 80
+  to_port           = 80
+}
+
+resource "aws_vpc_security_group_ingress_rule" "task_from_alb" {
+  security_group_id            = aws_security_group.tasks_sec.id
+  referenced_security_group_id = aws_security_group.alb_sec.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5000
+  to_port                      = 5000
+}
+
+resource "aws_vpc_security_group_egress_rule" "task_out" {
+  security_group_id = aws_security_group.tasks_sec.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
+}
+
+resource "aws_vpc_security_group_egress_rule" "alb_to_tasks" {
+  security_group_id            = aws_security_group.alb_sec.id
+  referenced_security_group_id = aws_security_group.tasks_sec.id
+  ip_protocol                  = "tcp"
+  from_port                    = 5000
+  to_port                      = 5000
+}
