@@ -327,7 +327,7 @@ resource "aws_iam_role" "git_role" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:yassine-ach/cloudops-launchpad:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = "repo:yassine-ach@158781609/cloudops-launchpad@1432682729:ref:refs/heads/main"
         }
       }
     }]
