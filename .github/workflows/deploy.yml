@@ -24,4 +24,16 @@ jobs:
       - name: prove who I am 
         run:  aws sts get-caller-identity
 
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses:  aws-actions/amazon-ecr-login@v2
+      
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: cloudops-launchpad-ecr
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:latest -t $REGISTRY/$REPOSITORY:${{ github.sha }} app
+          docker push --all-tags $REGISTRY/$REPOSITORY
+
     
