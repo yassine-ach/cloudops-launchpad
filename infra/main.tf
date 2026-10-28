@@ -309,3 +309,71 @@ resource "aws_vpc_endpoint" "vpc_endpoint" {
   service_name    = "com.amazonaws.${var.region}.s3"
   route_table_ids = [aws_route_table.private_rt.id]
 }
+
+resource "aws_iam_openid_connect_provider" "open_id" {
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+}
+
+resource "aws_iam_role" "git_role" {
+  name = "${var.project_name}-github-deploy"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = aws_iam_openid_connect_provider.open_id.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          "token.actions.githubusercontent.com:sub" = "repo:yassine-ach/cloudops-launchpad:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "git_role_policy" {
+  name = "git-role-policy"
+  role = aws_iam_role.git_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+        Resource = aws_ecr_repository.ecr_rep.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ecs:RegisterTaskDefinition", "ecs:DescribeTaskDefinition"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ecs:UpdateService", "ecs:DescribeServices"]
+        Resource = "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:service/${aws_ecs_cluster.ecs_cluster.name}/${var.project_name}-service"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
+        Resource = aws_iam_role.ecs_role.arn
+      }
+    ]
+  })
+}
+
+data "aws_caller_identity" "current" {}
