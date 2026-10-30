@@ -361,18 +361,13 @@ resource "aws_iam_role_policy" "git_role_policy" {
       },
       {
         Effect   = "Allow"
-        Action   = ["ecs:RegisterTaskDefinition", "ecs:DescribeTaskDefinition"]
+        Action   = ["elasticloadbalancing:DescribeLoadBalancers"]
         Resource = "*"
       },
       {
         Effect   = "Allow"
         Action   = ["ecs:UpdateService", "ecs:DescribeServices"]
         Resource = "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:service/${aws_ecs_cluster.ecs_cluster.name}/${var.project_name}-service"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["iam:PassRole"]
-        Resource = aws_iam_role.ecs_role.arn
       }
     ]
   })
