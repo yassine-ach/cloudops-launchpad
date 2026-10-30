@@ -41,4 +41,10 @@ jobs:
 
       - name: Wait for the service to be stable
         run: aws ecs wait services-stable --cluster cloudops-launchpad-ecs-cluster --services cloudops-launchpad-service
-    
+      - name: install requests
+        run: pip install requests 
+
+      - name: smoke test
+        run: |
+          ALB=$(aws elbv2 describe-load-balancers --names cloudops-launchpad-alb --query 'LoadBalancers[0].DNSName' --output text)
+          python scripts/smoke_test.py --url http://$ALB/health
