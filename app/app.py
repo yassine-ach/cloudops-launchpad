@@ -8,7 +8,7 @@ def health():
 
 @app.get("/")
 def index():
-    return jsonify(message= "CloudOps Launchpad API is running", version="0.1.0")   
+    return jsonify(message= "CloudOps Launchpad API is running", version="0.2.0")   
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
