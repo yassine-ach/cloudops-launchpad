@@ -35,5 +35,10 @@ jobs:
         run: |
           docker build -t $REGISTRY/$REPOSITORY:latest -t $REGISTRY/$REPOSITORY:${{ github.sha }} app
           docker push --all-tags $REGISTRY/$REPOSITORY
+      
+      - name: Roll out the new version
+        run: aws ecs update-service --cluster cloudops-launchpad-ecs-cluster --service cloudops-launchpad-service --force-new-deployment
 
+      - name: Wait for the service to be stable
+        run: aws ecs wait services-stable --cluster cloudops-launchpad-ecs-cluster --services cloudops-launchpad-service
     
