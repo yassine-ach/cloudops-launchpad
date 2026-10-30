@@ -353,7 +353,9 @@ resource "aws_iam_role_policy" "git_role_policy" {
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
-          "ecr:PutImage"
+          "ecr:PutImage",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
         ]
         Resource = aws_ecr_repository.ecr_rep.arn
       },
