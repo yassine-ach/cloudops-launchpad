@@ -16,3 +16,8 @@ variable "project_name" {
   description = "Project name, used as a prefix in resource names and tags"
   default     = "cloudops-launchpad"
 }
+
+variable "contact_email" {
+
+  type = string
+}

@@ -284,6 +284,10 @@ resource "aws_ecs_service" "ecs_service" {
     container_name   = "app"
     container_port   = 5000
   }
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
 
   depends_on = [aws_lb_listener.alb_listener, aws_route.route]
 }
@@ -374,3 +378,32 @@ resource "aws_iam_role_policy" "git_role_policy" {
 }
 
 data "aws_caller_identity" "current" {}
+
+resource "aws_sns_topic" "sns_alert" {
+  name = "${var.project_name}-alerts"
+}
+
+resource "aws_sns_topic_subscription" "sns_sub" {
+  topic_arn = aws_sns_topic.sns_alert.arn
+  protocol  = "email"
+  endpoint  = var.contact_email
+}
+
+resource "aws_cloudwatch_metric_alarm" "alarm" {
+  alarm_name          = "${var.project_name}-unhealthy-targets"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "UnHealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  statistic           = "Maximum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    TargetGroup  = aws_lb_target_group.alb_target.arn_suffix
+    LoadBalancer = aws_lb.app_lb.arn_suffix
+  }
+
+  alarm_actions = [aws_sns_topic.sns_alert.arn]
+}
