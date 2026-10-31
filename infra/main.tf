@@ -116,6 +116,7 @@ resource "aws_route_table_association" "private_b" {
 resource "aws_ecr_repository" "ecr_rep" {
   name         = "${var.project_name}-ecr"
   force_delete = true
+  image_scanning_configuration { scan_on_push = true }
   tags = {
     Name = "${var.project_name}-ecr"
   }
@@ -172,6 +173,7 @@ resource "aws_security_group" "tasks_sec" {
 
 resource "aws_vpc_security_group_ingress_rule" "alb_from_internet" {
   security_group_id = aws_security_group.alb_sec.id
+  description       = "Allow tcp on port 80"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 80
@@ -181,6 +183,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb_from_internet" {
 resource "aws_vpc_security_group_ingress_rule" "task_from_alb" {
   security_group_id            = aws_security_group.tasks_sec.id
   referenced_security_group_id = aws_security_group.alb_sec.id
+  description                  = "Allow port 5000 from the load balancer"
   ip_protocol                  = "tcp"
   from_port                    = 5000
   to_port                      = 5000
@@ -188,6 +191,7 @@ resource "aws_vpc_security_group_ingress_rule" "task_from_alb" {
 
 resource "aws_vpc_security_group_egress_rule" "task_out" {
   security_group_id = aws_security_group.tasks_sec.id
+  description       = "Allow HTTPS out to reach ECR and CloudWatch"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 443
@@ -197,18 +201,19 @@ resource "aws_vpc_security_group_egress_rule" "task_out" {
 resource "aws_vpc_security_group_egress_rule" "alb_to_tasks" {
   security_group_id            = aws_security_group.alb_sec.id
   referenced_security_group_id = aws_security_group.tasks_sec.id
+  description                  = "Allow port 5000 to the ECS tasks"
   ip_protocol                  = "tcp"
   from_port                    = 5000
   to_port                      = 5000
 }
 
 resource "aws_lb" "app_lb" {
-  name               = "${var.project_name}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sec.id]
-  subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
-
+  name                       = "${var.project_name}-alb"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.alb_sec.id]
+  subnets                    = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  drop_invalid_header_fields = true
   tags = {
     Name = "${var.project_name}-app-lb"
   }
@@ -406,4 +411,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm" {
   }
 
   alarm_actions = [aws_sns_topic.sns_alert.arn]
+}
+resource "aws_default_security_group" "default_sec_grp" {
+  vpc_id = aws_vpc.main.id
 }
