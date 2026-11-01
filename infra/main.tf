@@ -255,6 +255,7 @@ resource "aws_ecs_task_definition" "app_task" {
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.ecs_role.arn
+  skip_destroy             = true
   container_definitions = jsonencode([
     {
       name         = "app"

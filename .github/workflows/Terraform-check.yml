@@ -2,10 +2,6 @@ name: Terraform check
 
 on:
   pull_request:
-    paths:
-      - "infra/**"
-      - ".github/workflows/Terraform-check.yml"
-
 jobs:
   lint:
     runs-on: ubuntu-latest
