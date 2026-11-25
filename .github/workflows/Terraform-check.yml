@@ -40,5 +40,22 @@ jobs:
           # Would break our workflow: CKV_AWS_150 (destroy each session), CKV_AWS_51 (the pipeline re-pushes latest)
           # Risky change, needs testing: CKV_AWS_26, CKV_AWS_336
           skip_check: CKV_AWS_2,CKV_AWS_103,CKV_AWS_378,CKV2_AWS_20,CKV_AWS_260,CKV2_AWS_28,CKV_AWS_91,CKV2_AWS_11,CKV_AWS_65,CKV_AWS_338,CKV_AWS_158,CKV_AWS_136,CKV_AWS_150,CKV_AWS_51,CKV_AWS_26,CKV_AWS_336
-      
 
+jobs:
+    image-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build image (local only, no push)
+        run: docker build -t cloudops-app:pr app
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1   # v0.35.0
+        with:
+          image-ref: cloudops-app:pr
+          format: json
+          output: trivy-results.json
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
