@@ -41,8 +41,8 @@ jobs:
           # Risky change, needs testing: CKV_AWS_26, CKV_AWS_336
           skip_check: CKV_AWS_2,CKV_AWS_103,CKV_AWS_378,CKV2_AWS_20,CKV_AWS_260,CKV2_AWS_28,CKV_AWS_91,CKV2_AWS_11,CKV_AWS_65,CKV_AWS_338,CKV_AWS_158,CKV_AWS_136,CKV_AWS_150,CKV_AWS_51,CKV_AWS_26,CKV_AWS_336
 
-jobs:
-    image-scan:
+
+  image-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
