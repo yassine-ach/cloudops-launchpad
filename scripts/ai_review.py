@@ -1,17 +1,17 @@
 import json
+def read_checkov(path):
+   
+    with open(path) as f:
+        data = json.load(f)
+    return data['results']['failed_checks']
+checks = read_checkov("results.json")
+print(f"{len(checks)} failed checks")
 
-with open("results.json") as f:
-    data = json.load(f)
+for check in checks:
+    start = check['file_line_range'][0]
+    end = check['file_line_range'][1]
+    print(f"{check['check_id']} | {check['resource']} | {check['file_path']}:{start}-{end}") 
 
-failed_checks= data['results']['failed_checks']
-
-
-print(f"{len(failed_checks)} failed checks")
-       
-for failed in failed_checks:
-    start = failed['file_line_range'][0]
-    end = failed['file_line_range'][1]
-    print(f"check_id= {failed['check_id']} | resource= {failed['resource']} | {failed['file_path']}:{start}-{end}")
 
 with open("trivy-results.json") as f1:
     data1 = json.load(f1)
@@ -22,5 +22,5 @@ for result in data1["Results"]:
         vuln_count +=1 
         print(f"VulnerabilityID= {vuln['VulnerabilityID']} | package name= {vuln['PkgName']} | {vuln['InstalledVersion']} -> {vuln['FixedVersion']} | Severity= {vuln['Severity']}")
 
-print (f"{vuln_count} Vulnerabilities")
+print(f"{vuln_count} Vulnerabilities")
 
