@@ -48,3 +48,5 @@ desktop.ini
 .venv/
 __pycache__/
 *.pyc
+results.json
+trivy-results.json
