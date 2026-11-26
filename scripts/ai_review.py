@@ -13,14 +13,18 @@ for check in checks:
     print(f"{check['check_id']} | {check['resource']} | {check['file_path']}:{start}-{end}") 
 
 
-with open("trivy-results.json") as f1:
-    data1 = json.load(f1)
+def read_trivy(path):
+    with open(path) as f:
+        data = json.load(f)
 
-vuln_count = 0
-for result in data1["Results"]:
-    for vuln in result.get("Vulnerabilities", []):
-        vuln_count +=1 
-        print(f"VulnerabilityID= {vuln['VulnerabilityID']} | package name= {vuln['PkgName']} | {vuln['InstalledVersion']} -> {vuln['FixedVersion']} | Severity= {vuln['Severity']}")
+    vulns = []                                    
+    for result in data["Results"]:
+        for vuln in result.get("Vulnerabilities", []):
+            vulns.append(vuln)                    
+    return vulns 
+                                 
+vulns = read_trivy("trivy-results.json")
+print(f"{len(vulns)} vulnerabilities")
 
-print(f"{vuln_count} Vulnerabilities")
-
+for vuln in vulns:
+    print(f"{vuln['VulnerabilityID']} | {vuln['PkgName']} | {vuln['InstalledVersion']} -> {vuln['FixedVersion']} | {vuln['Severity']}")
