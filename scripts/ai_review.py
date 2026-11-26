@@ -18,7 +18,7 @@ with open("trivy-results.json") as f1:
 
 vuln_count = 0
 for result in data1["Results"]:
-    for vuln in result["Vulnerabilities"]:
+    for vuln in result.get("Vulnerabilities", []):
         vuln_count +=1 
         print(f"VulnerabilityID= {vuln['VulnerabilityID']} | package name= {vuln['PkgName']} | {vuln['InstalledVersion']} -> {vuln['FixedVersion']} | Severity= {vuln['Severity']}")
 
