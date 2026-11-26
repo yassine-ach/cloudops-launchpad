@@ -1,5 +1,5 @@
 import json
-
+import re
 
 def read_checkov(path):
     with open(path) as f:
@@ -35,6 +35,9 @@ def minimal_trivy(vuln):
         "severity": vuln["Severity"],
         "title": vuln.get("Title", "no title"),
     }
+
+def redact(text):
+    return re.sub(r"\b\d{12}\b", "[ACCOUNT_ID]", text)
 
 
 def main():
