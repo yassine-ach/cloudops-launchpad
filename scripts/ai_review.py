@@ -126,6 +126,20 @@ def main():
         print()
         time.sleep(5)
 
+    for vuln in vulns[:2]:
+        v = minimal_trivy(vuln)
+        prompt_tr = build_prompt_trivy(v)
+        try:
+            answer_tr = ask_gemini(client,prompt_tr)
+        except Exception as e:
+            answer_tr = f"AI review failed: {e}" 
+
+        print(f"=== {v['id']} | {v['package']} ===")  
+        print (answer_tr)
+        print()
+        time.sleep(5)
+
+
 
 if __name__ == "__main__":
     main()
