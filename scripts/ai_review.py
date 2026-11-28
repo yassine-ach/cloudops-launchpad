@@ -113,32 +113,38 @@ def main():
     if client is None:
         print("Skipping AI review: no Gemini client available.")
         return
+    lines = ["# AI Security Review",""]
 
     for check in checks[:2]:
         m = minimal_checkov(check)
         prompt = build_prompt_checkov(m)
+        print(f"Reviewing {m['id']} ...") 
         try:
             answer = ask_gemini(client, prompt)
         except Exception as e:
             answer = f"AI review failed: {e}"
-        print(f"=== {m['id']} | {m['resource']} ===")
-        print(answer)
-        print()
+        lines.append(f"## {m['id']} | {m['resource']}")
+        lines.append(answer)
+        lines.append("")
         time.sleep(5)
 
     for vuln in vulns[:2]:
         v = minimal_trivy(vuln)
+        print(f"Reviewing {v['id']} ...")
         prompt_tr = build_prompt_trivy(v)
         try:
             answer_tr = ask_gemini(client,prompt_tr)
         except Exception as e:
             answer_tr = f"AI review failed: {e}" 
 
-        print(f"=== {v['id']} | {v['package']} ===")  
-        print (answer_tr)
-        print()
+        lines.append(f"## {v['id']} | {v['package']}")  
+        lines.append(answer_tr)
+        lines.append("")
         time.sleep(5)
 
+    with open("report.md", "w") as f:
+        f.write("\n".join(lines))
+    print("Report written to report.md")
 
 
 if __name__ == "__main__":
