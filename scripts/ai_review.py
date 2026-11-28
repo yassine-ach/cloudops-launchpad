@@ -1,6 +1,7 @@
 import json
 import re
 from google import genai
+import time
 
 client= genai.Client()
 
@@ -44,7 +45,7 @@ def redact(text):
     return re.sub(r"\b\d{12}\b", "[ACCOUNT_ID]", text)
 
 
-def build_prompt(finding):
+def build_prompt_checkov(finding):
     return f"""You are an experienced DevSecOps engineer reviewing a pull request.
 A Checkov scan of AWS infrastructure written in Terraform reported this finding:
 
@@ -104,8 +105,17 @@ def main():
         print(f"{m['id']} | {m['package']} | {m['installed_version']} -> {m['fixed_version']} | {m['severity']}")
     
     if checks:
-        prompt = build_prompt(minimal_checkov(checks[0]))
-        #print(ask_gemini(prompt))
+        for check in checks[:2]:
+            m =  minimal_checkov(check)
+            prompt = build_prompt_checkov(m)
+            answer = ask_gemini(prompt)
+            print(f"=== {m['id']} | {m['resource']} ===")
+            print(answer)
+            print()
+            time.sleep(5)
+
+        
+
 
         if vulns:
             print(build_prompt_trivy(minimal_trivy(vulns[0])))    
